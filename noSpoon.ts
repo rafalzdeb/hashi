@@ -19,6 +19,12 @@ interface Position {
     y: number;
 }
 
+interface Connections {
+    cellA: Cell;
+    cellB: Cell;
+    connections: 0 | 1 | 2;
+}
+
 enum Direction {
     Up = "UP",
     Down = "DOWN",
@@ -30,11 +36,13 @@ class Cell {
    value: number;
    isNode: boolean;
    position: Point;
+   availableSlots: number;
 
    constructor(value: string, position: Point){
        this.value = Number(value);
        this.isNode = value === '.' ? false : true;
        this.position = position;
+       this.availableSlots = Number(value);
    }
 
    toString(){
@@ -94,6 +102,7 @@ const cells = ():Cell[] => {
 const board = {
    
     fields: cells(),
+    connections: this.getPossibleLinks(),
    
     showAllFields(){
        this.fields.forEach(element => {
@@ -154,14 +163,15 @@ const board = {
     moveDown(pos: Point): Point{return new Point(pos.x, pos.y + 1)},
 
     
+    
 
     getPossibleLinks(){
-        let possibleLinks :Array<[Cell,Cell]> = [];
+        let possibleLinks :Array<Connections> = [];
         board.fields.map(element => {
             if(element.isNode){
                 board.getNearbyCells(element).forEach(cell => {
                     if (!checkCellsDuplicate(element, cell, possibleLinks)){
-                        possibleLinks.push([element, cell])
+                        possibleLinks.push({cellA: element, cellB:cell, connections:0})
                     }
                 })
             }
@@ -174,11 +184,12 @@ const board = {
         //     console.error(c[0].position + " : " + c[1].position)
         // })
 
-        function checkCellsDuplicate(cell1:Cell , cell2:Cell, array:Array<[Cell,Cell]>): boolean{
+        function checkCellsDuplicate(cell1:Cell , cell2:Cell, array:Array<Connections>): boolean{
             const candidate = [cell2, cell1];
             let result = false;
             array.forEach(pair => {
-                if (JSON.stringify(candidate) === JSON.stringify(pair)) {
+                const arrayPair = [pair.cellA, pair.cellB]
+                if (JSON.stringify(candidate) === JSON.stringify(arrayPair)) {
                     result = result || true
                 } else {
                     result = result || false
@@ -186,7 +197,9 @@ const board = {
             })
             return result
         }
-    }  
+    },
+    
+    
 }
 
 // Write an action using console.log()
@@ -249,8 +262,10 @@ const board = {
 // number of links must match the node number (check when linking)
 // all nodes connect into one group
 
-const possibleLinks = board.getPossibleLinks();
+console.error("vvvvvvvvv")
+console.error(board.connections);
 console.error("^^^^^^^^^")
 
 
 console.log('0 0 2 0 1');
+
