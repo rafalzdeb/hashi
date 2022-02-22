@@ -103,6 +103,7 @@ class Board  {
    
     fields: Cell[];
     connections: Connections[];
+    blockedCells: Cell[];
 
     constructor(){
         this.fields = cells();
@@ -161,9 +162,6 @@ class Board  {
     moveUp(pos: Point): Point{return new Point(pos.x, pos.y - 1)}
     moveDown(pos: Point): Point{return new Point(pos.x, pos.y + 1)}
 
-    
-    
-
     getPossibleLinks(){
         let possibleLinks :Array<Connections> = [];
         this.fields.map(element => {
@@ -177,11 +175,6 @@ class Board  {
         });
         
         return possibleLinks;
-        
-        
-        // possibleLinks.forEach(c => {
-        //     console.error(c[0].position + " : " + c[1].position)
-        // })
 
         function checkCellsDuplicate(cell1:Cell , cell2:Cell, array:Array<Connections>): boolean{
             const candidate = [cell2, cell1];
@@ -198,6 +191,32 @@ class Board  {
         }
     }
     
+    addLink(cellA:Cell, cellB:Cell){
+        for (let conn of this.connections){
+            if(
+                (JSON.stringify(cellA.position) === JSON.stringify(conn.cellA.position) 
+                && JSON.stringify(cellB.position) === JSON.stringify(conn.cellB.position))
+                ||
+                (JSON.stringify(cellA.position) === JSON.stringify(conn.cellB.position) 
+                && JSON.stringify(cellB.position) === JSON.stringify(conn.cellA.position)) ){
+                    if ((conn.connections !== 2) && (conn.cellA.availableSlots > 0)
+                    && (conn.cellB.availableSlots > 0)) {
+                        console.error(conn.connections)
+                        conn.connections++;
+                        conn.cellA.availableSlots--;
+                        conn.cellB.availableSlots--;
+                        console.error(conn.connections)    
+                    }//TODO: add links crossing check
+                } 
+        }
+    }
+
+    printLinks(text:"log" | "error"){
+        for (const link of this.connections){
+            if (text === "log") console.log(link.cellA.position + " " + link.cellB.position + " " + link.connections )
+            if (text === "error") console.error(link.cellA.position + " " + link.cellB.position + " " + link.connections )
+        }
+    }
     
 }
 
@@ -207,21 +226,6 @@ class Board  {
 
 // Two coordinates and one integer: a node, one of its neighbors, the number of links connecting them.
  
-
-// function findAllLinks(){
-//     nodesState.forEach((node)=> {
-//        if(node.nodeToTheRight.isValid()){
-//            const link = new Link(node.coordinates, node.nodeToTheRight)
-//            linksArray.push(link);
-//        }
-
-//        if(node.nodeToTheBottom.isValid()){
-//            const link = new Link(node.coordinates, node.nodeToTheBottom)
-//            linksArray.push(link);
-//        }
-//     })
-
-//     }
 
 // function isAddingLinkPossible(n1:Point, n2:Point): Boolean {
 //    const node1 = nodesState.find(node => node.coordinates === n1)
@@ -261,11 +265,20 @@ class Board  {
 // number of links must match the node number (check when linking)
 // all nodes connect into one group
 
-console.error("vvvvvvvvv")
+const testCell1 = new Cell("1", new Point(2,0));
+const testCell2 = new Cell("1", new Point(0,0));
+
+
 const board = new Board();
-console.error(board.connections);
+board.printLinks("error")
+
+console.error("vvvvvvvvv")
+for (let link of board.connections){
+    console.error(link.cellA.position + " : " + link.cellB.position);
+    board.addLink(link.cellA, link.cellB);
+}
 console.error("^^^^^^^^^")
 
-
-console.log('0 0 2 0 1');
+board.printLinks("log");
+// console.log('0 0 2 0 1');
 
