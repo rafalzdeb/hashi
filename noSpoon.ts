@@ -99,32 +99,31 @@ const cells = ():Cell[] => {
    return result;
 }
 
-const board = {
+class Board  {
    
-    fields: cells(),
-    connections: this.getPossibleLinks(),
-   
-    showAllFields(){
-       this.fields.forEach(element => {
-           console.error(element)
-       });
-    },
+    fields: Cell[];
+    connections: Connections[];
 
+    constructor(){
+        this.fields = cells();
+        this.connections = this.getPossibleLinks();
+    }
+   
     getField(pos:Point):Cell{
         for (const f of this.fields){
             if (f.position.x === pos.x && f.position.y === pos.y) return f
         }
-    },
+    }
 
     getNearbyCells(field:Cell):Cell[] {
         let result: Cell[] = [];
         
         for (const dir in Direction){
             const d = this.findNearbyCell(field, Direction[dir])
-            if (d !== "") result.push(d)
+            if (d !== "") result.push(d as Cell)
         }
         return result;
-    },
+    }
 
     findNearbyCell(cell:Cell, dir: Direction): Cell | string {
         let pos = cell.position
@@ -136,13 +135,13 @@ const board = {
                 case Direction.Right: pos = this.moveRight(pos); break;
             }
             if (this.isWithinBoard(pos)){
-                const n = board.getField(pos)
+                const n = this.getField(pos)
                 if (n.isNode) return n
             } 
             else {return "";}
         }
         return "";
-    },
+    }
 
     isWithinBoard(pos:Point):boolean{
         let result = false
@@ -155,21 +154,21 @@ const board = {
             }   
         }
         return result;
-    },
+    }
   
-    moveRight(pos: Point): Point{return new Point(pos.x + 1, pos.y)},
-    moveLeft(pos: Point): Point{return new Point(pos.x - 1, pos.y)},
-    moveUp(pos: Point): Point{return new Point(pos.x, pos.y - 1)},
-    moveDown(pos: Point): Point{return new Point(pos.x, pos.y + 1)},
+    moveRight(pos: Point): Point{return new Point(pos.x + 1, pos.y)}
+    moveLeft(pos: Point): Point{return new Point(pos.x - 1, pos.y)}
+    moveUp(pos: Point): Point{return new Point(pos.x, pos.y - 1)}
+    moveDown(pos: Point): Point{return new Point(pos.x, pos.y + 1)}
 
     
     
 
     getPossibleLinks(){
         let possibleLinks :Array<Connections> = [];
-        board.fields.map(element => {
+        this.fields.map(element => {
             if(element.isNode){
-                board.getNearbyCells(element).forEach(cell => {
+                this.getNearbyCells(element).forEach(cell => {
                     if (!checkCellsDuplicate(element, cell, possibleLinks)){
                         possibleLinks.push({cellA: element, cellB:cell, connections:0})
                     }
@@ -197,7 +196,7 @@ const board = {
             })
             return result
         }
-    },
+    }
     
     
 }
@@ -263,6 +262,7 @@ const board = {
 // all nodes connect into one group
 
 console.error("vvvvvvvvv")
+const board = new Board();
 console.error(board.connections);
 console.error("^^^^^^^^^")
 
