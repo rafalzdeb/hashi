@@ -23,7 +23,7 @@ interface Connections {
     cellA: Cell;
     cellB: Cell;
     connections: 0 | 1 | 2;
-    add(): void;
+    add(): boolean;
     delete(): void;
     cellsBetween(): Point[];
     toString(): string;
@@ -65,12 +65,15 @@ class Link implements Connections{
        this.connections = 0;
    }
 
-   add(){
+   add():boolean{
        if (this.connections !== 2
         && this.cellA.availableSlots > 0 && this.cellB.availableSlots >0){
             this.connections++;
             this.cellA.availableSlots--;
             this.cellB.availableSlots--;
+            return true;
+        } else {
+            return false;
         }
    }
 
@@ -149,11 +152,12 @@ class Board  {
    
     fields: Cell[];
     connections: Connections[];
-    blockedCells: Cell[];
+    blockedCells: Point[];
 
     constructor(){
         this.fields = cells();
         this.connections = this.getPossibleLinks();
+        this.blockedCells = [];
     }
    
     getField(pos:Point):Cell{
@@ -238,6 +242,33 @@ class Board  {
         }
     }
 
+    addBlockedCells(point:Point){
+        if(!this.blockedCells.includes(point)) this.blockedCells.push(point)
+    }
+
+    isLinkBlocked(points:Point[]):boolean{
+        let result = false;
+        if(points === []) return result;
+        for (let point of points){
+            if(this.blockedCells.includes(point)){
+                result = result || true;
+            } else {
+                result = result || false;
+            }
+        }
+        return result;
+    }
+
+    getTotalAvailableSlots():number{
+        let sum = 0;
+        for (const field of this.fields){
+            if(field.isNode){
+                sum = sum + field.availableSlots
+            }
+        }
+        return sum;
+    }
+
     printLinks(text:"log" | "error"){
         for (const link of this.connections){
             if (text === "log") console.log(link.toString());
@@ -267,12 +298,23 @@ const board = new Board();
 board.printLinks("error")
 
 console.error("vvvvvvvvv")
+console.error("Av.slots @ start: " + board.getTotalAvailableSlots());
+
 for (let link of board.connections){
-    console.error(link.cellA.position + " : " + link.cellB.position);
-    console.error(link.cellsBetween());
-    // board.addLink(link.cellA, link.cellB);
-    link.add()
+    console.error(link.toString());
+
+    const blocked = board.isLinkBlocked(link.cellsBetween())
+    if (!blocked){
+        const isAdded = link.add()
+        if (isAdded) {
+            for (let pos of link.cellsBetween()){
+                board.addBlockedCells(pos);
+            }
+        }
+    }
 }
+
+console.error("Av.slots @ start: " + board.getTotalAvailableSlots());
 console.error("^^^^^^^^^")
 
 board.printLinks("log");
