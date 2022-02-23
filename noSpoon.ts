@@ -23,6 +23,9 @@ interface Connections {
     cellA: Cell;
     cellB: Cell;
     connections: 0 | 1 | 2;
+    add(): void;
+    delete(): void;
+    toString(): string;
 }
 
 enum Direction {
@@ -50,19 +53,40 @@ class Cell {
     }
 }
 
-class Link{
-   node1: Point;
-   node2: Point;
-   numberOfLinks: number;
+class Link implements Connections{
+   cellA: Cell;
+   cellB: Cell;
+   connections: 0 | 1 | 2;
 
-   constructor(node1: Point, node2: Point){
-       this.node1 = node1;
-       this.node2 = node2;
-       this.numberOfLinks = 0;
+   constructor(cellA:Cell, cellB:Cell){
+       this.cellA = cellA;
+       this.cellB = cellB;
+       this.connections = 0;
+   }
+
+   add(){
+       if (this.connections !== 2
+        && this.cellA.availableSlots > 0 && this.cellB.availableSlots >0){
+            console.error(this.connections)
+            this.connections++;
+            this.cellA.availableSlots--;
+            this.cellB.availableSlots--;
+            console.error(this.connections) 
+        }
+   }
+
+   delete(): void {
+       if (this.connections === 1 || this.connections === 2){
+           this.connections--;
+           this.cellA.availableSlots++;
+           this.cellB.availableSlots++;
+       }
+   }
+
+   toString(){
+       return `${this.cellA} ${this.cellB} ${this.connections}`
    }
 }
- 
-let linksArray:Link[] = [];
 
 class Point{
    x: number;
@@ -168,7 +192,8 @@ class Board  {
             if(element.isNode){
                 this.getNearbyCells(element).forEach(cell => {
                     if (!checkCellsDuplicate(element, cell, possibleLinks)){
-                        possibleLinks.push({cellA: element, cellB:cell, connections:0})
+                        // possibleLinks.push({cellA: element, cellB:cell, connections:0})
+                        possibleLinks.push(new Link(element, cell));
                     }
                 })
             }
@@ -191,25 +216,25 @@ class Board  {
         }
     }
     
-    addLink(cellA:Cell, cellB:Cell){
-        for (let conn of this.connections){
-            if(
-                (JSON.stringify(cellA.position) === JSON.stringify(conn.cellA.position) 
-                && JSON.stringify(cellB.position) === JSON.stringify(conn.cellB.position))
-                ||
-                (JSON.stringify(cellA.position) === JSON.stringify(conn.cellB.position) 
-                && JSON.stringify(cellB.position) === JSON.stringify(conn.cellA.position)) ){
-                    if ((conn.connections !== 2) && (conn.cellA.availableSlots > 0)
-                    && (conn.cellB.availableSlots > 0)) {
-                        console.error(conn.connections)
-                        conn.connections++;
-                        conn.cellA.availableSlots--;
-                        conn.cellB.availableSlots--;
-                        console.error(conn.connections)    
-                    }//TODO: add links crossing check
-                } 
-        }
-    }
+    // addLink(cellA:Cell, cellB:Cell){
+    //     for (let conn of this.connections){
+    //         if(
+    //             (JSON.stringify(cellA.position) === JSON.stringify(conn.cellA.position) 
+    //             && JSON.stringify(cellB.position) === JSON.stringify(conn.cellB.position))
+    //             ||
+    //             (JSON.stringify(cellA.position) === JSON.stringify(conn.cellB.position) 
+    //             && JSON.stringify(cellB.position) === JSON.stringify(conn.cellA.position)) ){
+    //                 if ((conn.connections !== 2) && (conn.cellA.availableSlots > 0)
+    //                 && (conn.cellB.availableSlots > 0)) {
+    //                     console.error(conn.connections)
+    //                     conn.connections++;
+    //                     conn.cellA.availableSlots--;
+    //                     conn.cellB.availableSlots--;
+    //                     console.error(conn.connections)    
+    //                 }//TODO: add links crossing check
+    //             } 
+    //     }
+    // }
 
     printLinks(text:"log" | "error"){
         for (const link of this.connections){
@@ -265,9 +290,9 @@ class Board  {
 // number of links must match the node number (check when linking)
 // all nodes connect into one group
 
-const testCell1 = new Cell("1", new Point(2,0));
+const testCell1 = new Cell("2", new Point(2,0));
 const testCell2 = new Cell("1", new Point(0,0));
-
+const testConnection: Connections = new Link(testCell2, testCell1);
 
 const board = new Board();
 board.printLinks("error")
@@ -275,7 +300,8 @@ board.printLinks("error")
 console.error("vvvvvvvvv")
 for (let link of board.connections){
     console.error(link.cellA.position + " : " + link.cellB.position);
-    board.addLink(link.cellA, link.cellB);
+    // board.addLink(link.cellA, link.cellB);
+    link.add()
 }
 console.error("^^^^^^^^^")
 
