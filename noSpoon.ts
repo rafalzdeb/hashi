@@ -41,12 +41,14 @@ class Cell {
    isNode: boolean;
    position: Point;
    availableSlots: number;
+   nearbyCells: Cell[];
 
    constructor(value: string, position: Point){
        this.value = Number(value);
        this.isNode = value === '.' ? false : true;
        this.position = position;
        this.availableSlots = Number(value);
+       this.nearbyCells = [];
    }
 
    toString(){
@@ -139,14 +141,14 @@ function pos2Point(pos: number): Point{
     return new Point(x,y)
 }
 
-const cells = ():Cell[] => {
-   let result = new Array<Cell>();
-   for (const index in data){
-       const pos = pos2Point(+index);
-       result.push(new Cell(data[index], pos));
-   }
-   return result;
-}
+const populateFields = ():Cell[] => {
+    let result = new Array<Cell>();
+    for (const index in data){
+        const pos = pos2Point(+index);
+        result.push(new Cell(data[index], pos));
+    }
+    return result;
+ }
 
 class Board  {
    
@@ -155,10 +157,18 @@ class Board  {
     blockedCells: Point[];
 
     constructor(){
-        this.fields = cells();
+        this.fields = populateFields();
         this.connections = this.getPossibleLinks();
         this.blockedCells = [];
+
+        for (let f of this.fields){
+            if(f.isNode){
+                f.nearbyCells = this.getNearbyCells(f);
+            }
+        }
     }
+
+    
    
     getField(pos:Point):Cell{
         for (const f of this.fields){
@@ -218,7 +228,6 @@ class Board  {
             if(element.isNode){
                 this.getNearbyCells(element).forEach(cell => {
                     if (!checkCellsDuplicate(element, cell, possibleLinks)){
-                        // possibleLinks.push({cellA: element, cellB:cell, connections:0})
                         possibleLinks.push(new Link(element, cell));
                     }
                 })
@@ -290,25 +299,29 @@ class Board  {
 // number of links must match the node number (check when linking)
 // all nodes connect into one group
 
+const board = new Board();
 const testCell1 = new Cell("2", new Point(2,0));
 const testCell2 = new Cell("1", new Point(0,0));
 const testConnection: Connections = new Link(testCell2, testCell1);
 
-const board = new Board();
 board.printLinks("error")
 
 console.error("vvvvvvvvv")
 console.error("Av.slots @ start: " + board.getTotalAvailableSlots());
 
-for (let link of board.connections){
-    console.error(link.toString());
+// TODO: Logic to check all possible combinations of links
+// TODO: make an iterator for board fields
+while (board.getTotalAvailableSlots() > 0){
+    for (let link of board.connections){
+        console.error(link.toString());
 
-    const blocked = board.isLinkBlocked(link.cellsBetween())
-    if (!blocked){
-        const isAdded = link.add()
-        if (isAdded) {
-            for (let pos of link.cellsBetween()){
-                board.addBlockedCells(pos);
+        const blocked = board.isLinkBlocked(link.cellsBetween())
+        if (!blocked){
+            const isAdded = link.add()
+            if (isAdded) {
+                for (let pos of link.cellsBetween()){
+                    board.addBlockedCells(pos);
+                }
             }
         }
     }
