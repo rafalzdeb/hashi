@@ -215,31 +215,11 @@ class Board  {
             return result
         }
     }
-    
-    // addLink(cellA:Cell, cellB:Cell){
-    //     for (let conn of this.connections){
-    //         if(
-    //             (JSON.stringify(cellA.position) === JSON.stringify(conn.cellA.position) 
-    //             && JSON.stringify(cellB.position) === JSON.stringify(conn.cellB.position))
-    //             ||
-    //             (JSON.stringify(cellA.position) === JSON.stringify(conn.cellB.position) 
-    //             && JSON.stringify(cellB.position) === JSON.stringify(conn.cellA.position)) ){
-    //                 if ((conn.connections !== 2) && (conn.cellA.availableSlots > 0)
-    //                 && (conn.cellB.availableSlots > 0)) {
-    //                     console.error(conn.connections)
-    //                     conn.connections++;
-    //                     conn.cellA.availableSlots--;
-    //                     conn.cellB.availableSlots--;
-    //                     console.error(conn.connections)    
-    //                 }//TODO: add links crossing check
-    //             } 
-    //     }
-    // }
 
     printLinks(text:"log" | "error"){
         for (const link of this.connections){
-            if (text === "log") console.log(link.cellA.position + " " + link.cellB.position + " " + link.connections )
-            if (text === "error") console.error(link.cellA.position + " " + link.cellB.position + " " + link.connections )
+            if (text === "log") console.log(link.toString());
+            if (text === "error") console.error(link.toString());
         }
     }
     
