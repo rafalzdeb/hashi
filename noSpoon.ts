@@ -25,6 +25,7 @@ interface Connections {
     connections: 0 | 1 | 2;
     add(): void;
     delete(): void;
+    cellsBetween(): Point[];
     toString(): string;
 }
 
@@ -67,11 +68,9 @@ class Link implements Connections{
    add(){
        if (this.connections !== 2
         && this.cellA.availableSlots > 0 && this.cellB.availableSlots >0){
-            console.error(this.connections)
             this.connections++;
             this.cellA.availableSlots--;
             this.cellB.availableSlots--;
-            console.error(this.connections) 
         }
    }
 
@@ -81,6 +80,29 @@ class Link implements Connections{
            this.cellA.availableSlots++;
            this.cellB.availableSlots++;
        }
+   }
+
+   cellsBetween():Point[]{
+       let result: Point[] = [];   
+        if ((this.cellA.position.x === this.cellB.position.x
+        && Math.abs(this.cellB.position.y - this.cellA.position.y) > 1)){
+            const x = this.cellA.position.x;
+            const max = Math.max(this.cellA.position.y, this.cellB.position.y);
+            const min = Math.min(this.cellA.position.y, this.cellB.position.y);
+            for (let y = min + 1;y < max; y++){
+                result.push(new Point(x,y))
+            }
+       }
+       if ((this.cellA.position.y === this.cellB.position.y
+        && Math.abs(this.cellB.position.x - this.cellA.position.x) > 1)){
+            const y = this.cellA.position.y;
+            const max = Math.max(this.cellA.position.x, this.cellB.position.x);
+            const min = Math.min(this.cellA.position.x, this.cellB.position.x);
+            for (let x = min + 1;x < max; x++){
+                result.push(new Point(x,y))
+            }
+       }
+       return result;
    }
 
    toString(){
@@ -231,39 +253,6 @@ class Board  {
 
 // Two coordinates and one integer: a node, one of its neighbors, the number of links connecting them.
  
-
-// function isAddingLinkPossible(n1:Point, n2:Point): Boolean {
-//    const node1 = nodesState.find(node => node.coordinates === n1)
-//    const node2 = nodesState.find(node => node.coordinates === n2)
-//    if (node1.activeLinks < node1.value && node2.activeLinks < node2.value) return true
-//    else return false
-// }
-
-// function makeConnections(){
-//     linksArray.forEach(link => {
-
-//         // number of links must match the node number (check when linking)
-//         if (isAddingLinkPossible(link.node1, link.node2)){
-       
-//             // links cannot cross (check if no links)
-//             if(link.numberOfLinks === 0) {
-//                 // checkCrossing()
-//                 // addLink()
-//             }
-//             if(link.numberOfLinks === 1) {
-
-//             }
-//         }
-//         // max 2 links per pair (check when linking)
-       
-//         // all nodes connect into one group
-//     })
-// }
-
-//  findNodes();
-//  findAllLinks();
-//  makeConnections();
-
 //-------------CONSTRAINTS-------------
 // links cannot cross (check if no links)
 // max 2 links per pair (check when linking)
@@ -280,6 +269,7 @@ board.printLinks("error")
 console.error("vvvvvvvvv")
 for (let link of board.connections){
     console.error(link.cellA.position + " : " + link.cellB.position);
+    console.error(link.cellsBetween());
     // board.addLink(link.cellA, link.cellB);
     link.add()
 }
