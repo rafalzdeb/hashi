@@ -36,12 +36,18 @@ enum Direction {
     Right = "RIGHT",
 }
 
+class PossibleConnection {
+    links: Link[];
+    tried: boolean;
+}
+
 class Cell {
    value: number;
    isNode: boolean;
    position: Point;
    availableSlots: number;
    nearbyCells: Cell[];
+   possibleConnections: PossibleConnection[];
 
    constructor(value: string, position: Point){
        this.value = Number(value);
@@ -49,6 +55,7 @@ class Cell {
        this.position = position;
        this.availableSlots = Number(value);
        this.nearbyCells = [];
+       this.possibleConnections = [];
    }
 
    toString(){
@@ -61,10 +68,24 @@ class Link implements Connections{
    cellB: Cell;
    connections: 0 | 1 | 2;
 
-   constructor(cellA:Cell, cellB:Cell){
+   constructor(cellA:Cell, cellB:Cell, connection: 0 | 1 | 2 = 0){
        this.cellA = cellA;
        this.cellB = cellB;
-       this.connections = 0;
+       this.connections = connection;
+   }
+
+   makeConnection(linksNo: 1 | 2){
+       if (this.cellA.availableSlots >= linksNo && this.cellB.availableSlots >= linksNo){
+           this.connections = linksNo;
+           this.cellA.availableSlots =- linksNo;
+           this.cellB.availableSlots =- linksNo;
+       }
+   }
+
+   clearConnection(){
+        this.cellA.availableSlots =+ this.connections;
+        this.cellB.availableSlots =+ this.connections;
+        this.connections = 0;
    }
 
    add():boolean{
@@ -164,10 +185,31 @@ class Board  {
         for (let f of this.fields){
             if(f.isNode){
                 f.nearbyCells = this.getNearbyCells(f);
+                console.error("Nearby cells for : " + f)
+                console.error("" + f.nearbyCells)
+                console.error("----------------")
+                console.error("Possible links: ")
+                console.error(this.generatePossibleConnections(f));
             }
         }
     }
+    generatePossibleConnections(field:Cell){
+        let k = field.value;
+        let possibleLinks: Link[][] = this.getAllPossibleLinks(field);
+        return "" + possibleLinks;
+    }
 
+    getAllPossibleLinks(field:Cell){
+        let linksArray:Link[][] = []
+        for (let cell of field.nearbyCells){
+            if (cell.value === 1 || field.value === 1) {
+                linksArray.push([new Link(field, cell, 1)])
+            } else {
+                linksArray.push([new Link(field, cell, 2), new Link(field, cell, 1)])
+            }
+        }
+        return linksArray;
+    }
     
    
     getField(pos:Point):Cell{
@@ -326,6 +368,8 @@ while (board.getTotalAvailableSlots() > 0){
         }
     }
 }
+
+
 
 console.error("Av.slots @ start: " + board.getTotalAvailableSlots());
 console.error("^^^^^^^^^")
