@@ -39,6 +39,19 @@ enum Direction {
 class PossibleConnection {
     links: Link[];
     tried: boolean;
+
+    constructor(links: Link[], tried:boolean){
+        this.links = links;
+        this.tried = tried
+    }
+
+    linksSum(): number{
+        return this.links.reduce((total, link) => total + link.connections, 0)
+    }
+
+    toString(){
+        return `${this.links.map(x => x)} ${this.tried} \n`
+    }
 }
 
 class Cell {
@@ -185,32 +198,43 @@ class Board  {
         for (let f of this.fields){
             if(f.isNode){
                 f.nearbyCells = this.getNearbyCells(f);
-                console.error("Nearby cells for : " + f)
-                console.error("" + f.nearbyCells)
-                console.error("----------------")
-                console.error("Possible links: ")
-                console.error(this.generatePossibleConnections(f));
+                f.possibleConnections = this.generatePossibleConnections(f);
             }
         }
     }
     generatePossibleConnections(field:Cell){
-        let k = field.value;
-        let possibleLinks: Link[][] = this.getAllPossibleLinks(field);
-        return "" + possibleLinks;
+        // const k = field.value;
+        const possibleLinks: Link[][] = this.getAllPossibleLinks(field);
+        const possibleConnections = this.cartesianProduct(...possibleLinks);
+        const connections = possibleConnections.map(x => new PossibleConnection(x, false))
+        const result = connections.filter(conn => {
+            const connectionSum = conn.linksSum()
+            return (connectionSum === field.value);
+        });
+        return result;
     }
 
     getAllPossibleLinks(field:Cell){
         let linksArray:Link[][] = []
         for (let cell of field.nearbyCells){
             if (cell.value === 1 || field.value === 1) {
-                linksArray.push([new Link(field, cell, 1)])
+                linksArray.push([new Link(field, cell, 1), new Link(field,cell, 0)])
             } else {
                 linksArray.push([new Link(field, cell, 2), new Link(field, cell, 1)])
             }
         }
         return linksArray;
     }
-    
+
+    cartesianProduct<T>(...allEntries: T[][]): T[][] {
+        return allEntries.reduce<T[][]>(
+            (results, entries) =>
+            results
+                .map(result => entries.map(entry => [...result, entry] ))
+                .reduce((subResults, result) => [...subResults, ...result]   , []), 
+            [[]]
+        )
+    }
    
     getField(pos:Point):Cell{
         for (const f of this.fields){
