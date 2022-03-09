@@ -23,8 +23,6 @@ interface Connections {
     cellA: Cell;
     cellB: Cell;
     connections: 0 | 1 | 2;
-    add(): boolean;
-    delete(): void;
     cellsBetween(): Point[];
     toString(): string;
 }
@@ -39,10 +37,16 @@ enum Direction {
 class PossibleConnection {
     links: Link[];
     tried: boolean;
+    active: boolean;
 
-    constructor(links: Link[], tried:boolean){
+    constructor(links: Link[], tried = false, active = false){
         this.links = links;
-        this.tried = tried
+        this.tried = tried;
+        this.active = active;
+    }
+
+    get(){
+        return this.links;
     }
 
     linksSum(): number{
@@ -71,6 +75,11 @@ class Cell {
        this.possibleConnections = [];
    }
 
+   compare(otherCell:Cell):boolean{
+       if (this.position.x === otherCell.position.x && this.position.y === otherCell.position.y) return true;
+       else return false;
+   }
+
    toString(){
         return `${this.position.x} ${this.position.y}`
     }
@@ -85,40 +94,6 @@ class Link implements Connections{
        this.cellA = cellA;
        this.cellB = cellB;
        this.connections = connection;
-   }
-
-   makeConnection(linksNo: 1 | 2){
-       if (this.cellA.availableSlots >= linksNo && this.cellB.availableSlots >= linksNo){
-           this.connections = linksNo;
-           this.cellA.availableSlots =- linksNo;
-           this.cellB.availableSlots =- linksNo;
-       }
-   }
-
-   clearConnection(){
-        this.cellA.availableSlots =+ this.connections;
-        this.cellB.availableSlots =+ this.connections;
-        this.connections = 0;
-   }
-
-   add():boolean{
-       if (this.connections !== 2
-        && this.cellA.availableSlots > 0 && this.cellB.availableSlots >0){
-            this.connections++;
-            this.cellA.availableSlots--;
-            this.cellB.availableSlots--;
-            return true;
-        } else {
-            return false;
-        }
-   }
-
-   delete(): void {
-       if (this.connections === 1 || this.connections === 2){
-           this.connections--;
-           this.cellA.availableSlots++;
-           this.cellB.availableSlots++;
-       }
    }
 
    cellsBetween():Point[]{
@@ -193,6 +168,7 @@ class Board  {
     constructor(){
         this.fields = populateFields();
         this.connections = this.getPossibleLinks();
+        // this.connections = [];
         this.blockedCells = [];
 
         for (let f of this.fields){
@@ -202,11 +178,53 @@ class Board  {
             }
         }
     }
+
+    isLinkInConnections(link:Link): boolean{
+        
+        let result = false
+        for (const c of this.connections){
+            if (
+                (c.cellA.compare(link.cellA) && c.cellB.compare(link.cellB)) 
+            ||  (c.cellA.compare(link.cellB) && c.cellB.compare(link.cellA)))
+            {
+                result = result || true
+            }
+            else {
+                result = result || false
+            }   
+        }
+        return result;
+
+    }
+
+    getLink(cellA:Cell, cellB:Cell): Connections{
+        for (const c of this.connections){
+            if (
+                (c.cellA.compare(cellA) && c.cellB.compare(cellB)) 
+            ||  (c.cellA.compare(cellB) && c.cellB.compare(cellA)))
+            {
+                return c;
+            }
+        }
+    }
+
+    activate(link: Link){
+        const fieldA = this.getField(link.cellA.position);
+        const fieldB = this.getField(link.cellB.position);
+        const connection = this.getLink(fieldA, fieldB)
+        const bridges = link.connections;
+        if (fieldA.availableSlots >= bridges && fieldB.availableSlots >= bridges){
+            fieldA.availableSlots -= bridges;
+            fieldB.availableSlots -= bridges;
+            connection.connections = bridges;
+        }
+    }
+
     generatePossibleConnections(field:Cell){
         // const k = field.value;
         const possibleLinks: Link[][] = this.getAllPossibleLinks(field);
         const possibleConnections = this.cartesianProduct(...possibleLinks);
-        const connections = possibleConnections.map(x => new PossibleConnection(x, false))
+        const connections = possibleConnections.map(x => new PossibleConnection(x))
         const result = connections.filter(conn => {
             const connectionSum = conn.linksSum()
             return (connectionSum === field.value);
@@ -338,7 +356,7 @@ class Board  {
         let sum = 0;
         for (const field of this.fields){
             if(field.isNode){
-                sum = sum + field.availableSlots
+                sum += field.availableSlots
             }
         }
         return sum;
@@ -346,8 +364,17 @@ class Board  {
 
     printLinks(text:"log" | "error"){
         for (const link of this.connections){
-            if (text === "log") console.log(link.toString());
+
+            if (text === "log" && link.connections > 0) console.log(link.toString());
             if (text === "error") console.error(link.toString());
+        }
+    }
+
+    printFields(){
+        for (const field of this.fields){
+            if(field.isNode){
+                console.error(field + ":" + field.availableSlots + "\n")
+            }
         }
     }
     
@@ -378,26 +405,54 @@ console.error("Av.slots @ start: " + board.getTotalAvailableSlots());
 // TODO: Logic to check all possible combinations of links
 // TODO: make an iterator for board fields
 while (board.getTotalAvailableSlots() > 0){
-    for (let link of board.connections){
-        console.error(link.toString());
-
-        const blocked = board.isLinkBlocked(link.cellsBetween())
-        if (!blocked){
-            const isAdded = link.add()
-            if (isAdded) {
-                for (let pos of link.cellsBetween()){
-                    board.addBlockedCells(pos);
-                }
-            }
+    for (const field of board.fields){
+        if (field.isNode){
+            console.error("listing possible connections for: " + field.position)
+            for (let possConn of field.possibleConnections){
+                possConn.links.forEach(link => {
+                    console.error("Link: " + link + "is in connections: " + board.isLinkInConnections(link))
+                    
+                    console.error("Before linking: " + link.cellA.position + "-" +link.cellA.availableSlots + " : " + link.cellB.position + "-" + link.cellB.availableSlots)
+                    if(link.connections > 0) board.activate(link)
+                    console.error("After linking: " + link.cellA.position + "-" +link.cellA.availableSlots + " : " + link.cellB.position + "-" + link.cellB.availableSlots)
+                        
+                // if (!possConn.active){
+                //     possConn.active = true;
+                //     possConn.links.forEach(link => {
+                //         console.error("Before linking: " + link.cellA.position + "-" +link.cellA.availableSlots + " : " + link.cellB.position + "-" + link.cellB.availableSlots)
+                //         const added = link.add();
+                //         console.error("After linking: " + link.cellA.position + "-" +link.cellA.availableSlots + " : " + link.cellB.position + "-" + link.cellB.availableSlots)
+                        
+                //         if (added) board.connections.push(link)
+                //     });
+                //     break;
+                // }
+            })
         }
     }
+    // for (let link of board.connections){
+    //     console.error(link.toString());
+
+    //     const blocked = board.isLinkBlocked(link.cellsBetween())
+    //     if (!blocked){
+    //         const isAdded = link.add()
+    //         if (isAdded) {
+    //             for (let pos of link.cellsBetween()){
+    //                 board.addBlockedCells(pos);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 
 
 console.error("Av.slots @ start: " + board.getTotalAvailableSlots());
+
+console.error("vvvvvvvvv")
+board.printFields();
 console.error("^^^^^^^^^")
 
 board.printLinks("log");
 // console.log('0 0 2 0 1');
-
+}
