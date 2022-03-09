@@ -391,9 +391,10 @@ class Board  {
         }
     }
 
-    printFields(){
+    printAvailableSlots(){
+        console.error("Node : available slots \n")
         for (const node of this.nodes){
-            console.error(node + ":" + node.availableSlots + "\n")
+            console.error(node + ":" + node.availableSlots)
         }
     }
     
@@ -455,7 +456,7 @@ while (board.getTotalAvailableSlots() > 0){
 console.error("Av.slots @ start: " + board.getTotalAvailableSlots());
 
 console.error("vvvvvvvvv")
-board.printFields();
+board.printAvailableSlots();
 console.error("^^^^^^^^^")
 
 board.printLinks("log");
