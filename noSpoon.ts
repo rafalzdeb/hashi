@@ -222,18 +222,35 @@ class Board  {
         const fieldB = this.getField(link.cellB.position);
         const connection = this.getLink(fieldA, fieldB)
         const bridges = link.connections;
-        if (fieldA.availableSlots >= bridges && fieldB.availableSlots >= bridges){
             fieldA.availableSlots -= bridges;
             fieldB.availableSlots -= bridges;
             connection.connections = bridges;
-        }
+    }
+
+    isLinkingPossible(link: Link): boolean{
+        const fieldA = this.getField(link.cellA.position);
+        const fieldB = this.getField(link.cellB.position);
+        
+        // const connection = this.getLink(fieldA, fieldB)
+        const bridges = link.connections;
+        if (this.slotsAvailable(fieldA, fieldB, bridges)){
+                console.error("linking possible ===> " + fieldA.availableSlots + " : " + fieldB.availableSlots);
+                return true
+            } else {
+                return false
+            }
+    }
+
+    slotsAvailable(cellA: Cell, cellB:Cell, bridges: 0|1|2): Boolean{
+        return (cellA.availableSlots > 0 && cellA.availableSlots >= bridges 
+            && cellB.availableSlots > 0 && cellB.availableSlots >= bridges)
     }
 
     generatePossibleConnections(field:Cell){
-        // const k = field.value;
         const possibleLinks: Link[][] = this.getAllPossibleLinks(field);
         const possibleConnections = this.cartesianProduct(...possibleLinks);
-        const connections = possibleConnections.map(x => new PossibleConnection(x))
+        const removingZeroBridges = possibleConnections.map(el => el.filter(link => link.connections > 0));
+        const connections = removingZeroBridges.map(x => new PossibleConnection(x))
         const result = connections.filter(conn => {
             const connectionSum = conn.linksSum()
             return (connectionSum === field.value);
@@ -417,25 +434,30 @@ const testCell1 = new Cell("2", new Point(2,0));
 const testCell2 = new Cell("1", new Point(0,0));
 const testConnection: Connections = new Link(testCell2, testCell1);
 
-board.printLinks("error")
+// board.printLinks("error")
 
 console.error("vvvvvvvvv")
 console.error("Av.slots @ start: " + board.getTotalAvailableSlots());
 
 // TODO: Logic to check all possible combinations of links
 // TODO: make an iterator for board fields
-while (board.getTotalAvailableSlots() > 0){
+// while (board.getTotalAvailableSlots() > 0){
     for (const node of board.nodes){
             console.error("listing possible connections for: " + node.position)
             for (let possConn of node.possibleConnections){
                 possConn.links.forEach(link => {
-                    console.error("Link: " + link + "is in connections: " + board.isLinkInConnections(link))
-                    
-                    console.error("Before linking: " + link.cellA.position + "-" +link.cellA.availableSlots + " : " + link.cellB.position + "-" + link.cellB.availableSlots)
-                    if(link.connections > 0) board.activate(link)
-                    console.error("After linking: " + link.cellA.position + "-" +link.cellA.availableSlots + " : " + link.cellB.position + "-" + link.cellB.availableSlots)
-            })
+                    // console.error("Connection tried?: " + possConn.tried);
+                    // console.error("Connection active?: " + possConn.active);
+                    // console.error("Link: " + link + " is in connections: " + board.isLinkInConnections(link))
+                    if(board.isLinkingPossible(link)){
+                        console.error("Before linking: " + link.cellA.position + "-" +link.cellA.availableSlots + " : " + link.cellB.position + "-" + link.cellB.availableSlots)
+                        board.activate(link)
+                        console.error("After linking: " + link.cellA.position + "-" +link.cellA.availableSlots + " : " + link.cellB.position + "-" + link.cellB.availableSlots)
+                    }
+                })
     }
+}
+
     // for (let link of board.connections){
     //     console.error(link.toString());
 
@@ -449,11 +471,11 @@ while (board.getTotalAvailableSlots() > 0){
     //         }
     //     }
     // }
-}
+// }
 
 
 
-console.error("Av.slots @ start: " + board.getTotalAvailableSlots());
+console.error("Av.slots @ end: " + board.getTotalAvailableSlots());
 
 console.error("vvvvvvvvv")
 board.printAvailableSlots();
@@ -461,4 +483,4 @@ console.error("^^^^^^^^^")
 
 board.printLinks("log");
 // console.log('0 0 2 0 1');
-}
+
