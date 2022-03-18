@@ -225,6 +225,8 @@ class Board  {
             fieldA.availableSlots -= bridges;
             fieldB.availableSlots -= bridges;
             connection.connections = bridges;
+
+            this.blockedCells.push(...link.cellsBetween())
     }
 
     isLinkingPossible(link: Link): boolean{
@@ -233,7 +235,7 @@ class Board  {
         
         // const connection = this.getLink(fieldA, fieldB)
         const bridges = link.connections;
-        if (this.slotsAvailable(fieldA, fieldB, bridges)){
+        if (this.areSlotsAvailable(fieldA, fieldB, bridges) && !this.isLinkBlocked(link.cellsBetween())){
                 console.error("linking possible ===> " + fieldA.availableSlots + " : " + fieldB.availableSlots);
                 return true
             } else {
@@ -241,9 +243,22 @@ class Board  {
             }
     }
 
-    slotsAvailable(cellA: Cell, cellB:Cell, bridges: 0|1|2): Boolean{
+    areSlotsAvailable(cellA: Cell, cellB:Cell, bridges: 0|1|2): Boolean{
         return (cellA.availableSlots > 0 && cellA.availableSlots >= bridges 
             && cellB.availableSlots > 0 && cellB.availableSlots >= bridges)
+    }
+
+    isLinkBlocked(points:Point[]):boolean{
+        let result = false;
+        if(points === []) return result;
+        for (let point of points){
+            if(this.blockedCells.includes(point)){
+                result = result || true;
+            } else {
+                result = result || false;
+            }
+        }
+        return result;
     }
 
     generatePossibleConnections(field:Cell){
@@ -373,19 +388,6 @@ class Board  {
         if(!this.blockedCells.includes(point)) this.blockedCells.push(point)
     }
 
-    isLinkBlocked(points:Point[]):boolean{
-        let result = false;
-        if(points === []) return result;
-        for (let point of points){
-            if(this.blockedCells.includes(point)){
-                result = result || true;
-            } else {
-                result = result || false;
-            }
-        }
-        return result;
-    }
-
     getTotalAvailableSlots():number{
         let sum = 0;
         for (const node of this.nodes){
@@ -479,6 +481,7 @@ console.error("Av.slots @ end: " + board.getTotalAvailableSlots());
 
 console.error("vvvvvvvvv")
 board.printAvailableSlots();
+board.blockedCells.forEach(x => console.error("blocked: " + x))
 console.error("^^^^^^^^^")
 
 board.printLinks("log");
